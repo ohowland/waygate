@@ -23,7 +23,8 @@ public:
     auto size() const -> int { return m_size; }
     auto scale() const -> double { return m_scale; }
 
-    auto parse_from(std::vector<uint8_t>, const Endianness) const -> std::pair<std::string, double>;
+    auto parse_from(const std::vector<uint8_t>) const -> double;
+    auto frame_to(std::vector<uint8_t>, const Endianness) const -> std::vector<uint8_t>;
 private:
     
     const std::string m_name;
@@ -34,22 +35,27 @@ private:
 
 class Message {
 public:
-    Message(uint32_t t_name);
-    Message(uint32_t t_name, Endianness t_endian);
+    Message(const std::string& t_name, const uint32_t t_id, const std::vector<Signal> t_sigs);
 
     auto id() -> uint32_t { return m_id; }
     auto signals() -> std::vector<Signal> { return m_signals; }
-
-    auto addSignal(Signal t_sig) -> Message&;
+    
     auto decode(const Frame t_frame) const -> std::map<std::string, double>;
-    // auto decode(std::vector<uint8_t> t_payload) -> std::map<std::string, double>;
-private:
 
+private:
+    const std::string m_name;
     const uint32_t m_id;
-    const Endianness m_endian;
-    std::vector<Signal> m_signals;
+    const std::vector<Signal> m_signals;
 };
 
+class MessageHandler {
+public:
+    MessageHandler(std::vector<Message> t_msgs);
+
+    auto decode(const Frame t_frame) const -> std::map<std::string, double>;
+private:
+    std::map<uint32_t, Message> m_messages;
+};
 
 }
 #endif

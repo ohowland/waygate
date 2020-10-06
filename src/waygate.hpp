@@ -2,5 +2,5 @@
 #define WAYGATE_VERSION_MINOR @WAYGATE_VERSION_MINOR@
 #define PROJECT_CONFIG_DIR @PROJECT_CONFIG_DIR@
 
-#include "reader.hpp"
+#include "bus.hpp"
 #include "signals.hpp"

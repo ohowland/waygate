@@ -1,7 +1,10 @@
 #include "signals.hpp"
 #include "frame.hpp"
 
-#include <arpa/inet.h>
+#include <map>
+#include <vector>
+
+#include <iostream>
 
 namespace can {
 
@@ -12,7 +15,7 @@ Signal::Signal(std::string t_name, uint8_t t_start, uint8_t t_size, double t_sca
   m_scale(t_scale)
 { }
 
-auto Signal::parse_from(std::vector<uint8_t> t_data, const Endianness t_endian) const -> std::pair<std::string, double> {
+auto Signal::parse_from(const std::vector<uint8_t> t_data) const -> double {
     
     int raw_val = 0;
     auto i = m_size - 1;
@@ -21,37 +24,43 @@ auto Signal::parse_from(std::vector<uint8_t> t_data, const Endianness t_endian) 
         i--;
     }
 
-    auto scaled_val = static_cast<double>(raw_val) * m_scale; 
-
-    return std::pair<std::string, double>(m_name, static_cast<double>(scaled_val));
+    return static_cast<double>(raw_val) * m_scale; 
 }
 
-auto compare_start_index(const Signal i, const Signal j) -> bool { return i.start() < j.start(); }
-
-
-Message::Message(uint32_t t_id, Endianness t_endian)
-: m_id(t_id),
-  m_endian(t_endian),
-  m_signals()
+Message::Message(const std::string& t_name, const uint32_t t_id, const std::vector<Signal> t_sigs)
+: m_name(t_name),
+  m_id(t_id),
+  m_signals(t_sigs)
 { }
-
-// define iterator for message signals: deliver signals ordered by ascending start bit.
-
-auto Message::addSignal(Signal t_sig) -> Message& {
-    m_signals.push_back(t_sig);
-    return *this;
-}
 
 auto Message::decode(const Frame t_frame) const -> std::map<std::string, double> {
     std::map<std::string, double> decoded;
 
     auto const payload = t_frame.data();
     for (auto const& signal : m_signals) {
-        auto v = signal.parse_from(payload, m_endian);
-        decoded.insert(v);
+        auto scaled_val = signal.parse_from(payload);
+        decoded.insert(std::pair<std::string, double>(signal.name(), scaled_val));
     }
 
     return decoded;
 }
+
+auto msg_vec_to_map(std::vector<Message> t_msgs) -> std::map<uint32_t, Message> {
+    std::map<uint32_t, Message> msg_map;
+    for (auto msg : t_msgs) {
+        msg_map.emplace(std::pair<uint32_t, Message>(msg.id(), msg));
+    }
+    return msg_map;
+}
+
+MessageHandler::MessageHandler(std::vector<Message> t_msgs)
+: m_messages(msg_vec_to_map(t_msgs))
+{ }
+
+auto MessageHandler::decode(const Frame t_frame) const -> std::map<std::string, double> {
+    auto msg = m_messages.at(t_frame.id());
+    return msg.decode(t_frame);
+}
+
 
 }

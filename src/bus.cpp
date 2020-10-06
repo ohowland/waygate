@@ -1,7 +1,8 @@
-#include "reader.hpp"
+#include "bus.hpp"
 
 #include <string>
 #include <string.h>
+#include <memory>
 
 #include <unistd.h>
 #include <net/if.h>
@@ -15,7 +16,7 @@
 
 namespace can {
 
-Reader::Reader(const std::string& t_ifname)
+SocketHandler::SocketHandler(const std::string& t_ifname)
 : m_fd(open(t_ifname))
 {
     if (m_fd < 0) {
@@ -24,7 +25,7 @@ Reader::Reader(const std::string& t_ifname)
     }
 }
 
-Reader::~Reader() 
+SocketHandler::~SocketHandler() 
 {
     int r = close();
     if (r < 0) {
@@ -32,12 +33,12 @@ Reader::~Reader()
     }
 }
 
-auto Reader::close() -> int {
+auto SocketHandler::close() -> int {
     std::cout << "closing socket (fd: " << m_fd << ")" << std::endl;
     return ::close(m_fd);
 }
 
-auto Reader::open(std::string iface) -> int {
+auto SocketHandler::open(std::string iface) -> int {
     int fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (fd < 0) {
         std::cerr << "failed to open socket" << std::endl;
@@ -46,7 +47,7 @@ auto Reader::open(std::string iface) -> int {
     return bind(fd, iface); 
 }
 
-auto Reader::bind(int t_fd, std::string t_iface) -> int {
+auto SocketHandler::bind(int t_fd, std::string t_iface) -> int {
 
     auto index = nameToIndex(t_fd, t_iface);
     if (index < 0) {
@@ -67,7 +68,7 @@ auto Reader::bind(int t_fd, std::string t_iface) -> int {
 }
 
 
-auto Reader::recv() const -> Frame {
+auto SocketHandler::recv() const -> Frame {
     struct can_frame frame;
 
     auto n = ::read(m_fd, &frame, CAN_MTU);
@@ -94,4 +95,11 @@ auto nameToIndex(int t_fd, std::string t_iface) -> int {
     return ifr.ifr_ifindex;
 }
 
+Bus::Bus(const std::string& t_iface)
+: m_socket_handler(std::make_shared<SocketHandler>(t_iface))
+{ }
+
+auto Bus::read() -> Frame {
+    return m_socket_handler->recv();
+}
 }
