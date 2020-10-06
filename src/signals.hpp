@@ -8,6 +8,11 @@
 #include "frame.hpp"
 
 namespace can {
+
+enum Endianness {
+    LittleEndian,
+    BigEndian,
+};
     
 class Signal {
 public:
@@ -18,17 +23,13 @@ public:
     auto size() const -> int { return m_size; }
     auto scale() const -> double { return m_scale; }
 
-    auto parse_from(const std::vector<uint8_t>, const Endianness) const -> std::pair<std::string, double>;
+    auto parse_from(std::vector<uint8_t>, const Endianness) const -> std::pair<std::string, double>;
 private:
+    
     const std::string m_name;
     const int m_start;
     const int m_size;
     const double m_scale;
-};
-
-enum Endianness {
-    BigEndian,
-    LittleEndian,
 };
 
 class Message {
