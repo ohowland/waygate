@@ -16,18 +16,9 @@
 
 #include "frame.hpp"
 #include "signals.hpp"
+#include "filter.hpp"
 
 namespace can {
-
-class Reader{
-public:
-    Reader();
-};
-
-class Writer{
-public:
-    Writer();
-};
 
 class SocketHandler{
 public:
@@ -40,16 +31,18 @@ public:
     auto open(std::string t_iface) -> int;
     auto bind(int t_fd, std::string t_iface) -> int;
 
+    auto addFilters(std::vector<Filter> t_filters) -> int;
+
 private:    
     const int m_fd;
 };
 
 class Bus {
 public:
-    Bus(const std::string& t_iface);
+    Bus(const std::string& t_iface, std::vector<Filter> t_filters);
 
     auto read() -> Frame; 
-    auto write(Frame);
+    auto write(Frame) -> int;
 private:
     const std::shared_ptr<SocketHandler> m_socket_handler;
 };
@@ -57,7 +50,5 @@ private:
 auto nameToIndex(int t_fd, std::string t_iface) -> int;
 
 }
-
-
 
 #endif

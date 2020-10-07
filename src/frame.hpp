@@ -12,14 +12,14 @@ public:
       m_id(0),
       m_len(0),
       m_data()
-    { };
+    { }
 
     Frame(const uint32_t t_id, const uint8_t t_len, const unsigned char t_data[])
     : m_timestamp(std::time(0)),
       m_id(t_id),
       m_len(t_len),
       m_data(t_data, t_data + t_len)
-    { };
+    { }
 
     auto timestamp() const -> std::time_t { return m_timestamp; }
     auto id() const -> uint32_t { return m_id; }
@@ -32,4 +32,4 @@ private:
 };
 
 }
-#endif
+#endif 

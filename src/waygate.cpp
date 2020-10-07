@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <map>
 
 int main(int arc, char* argv[]) {
     fprintf(stdout, "%s version %d.%d\n",argv[0], 0, 1);
@@ -17,13 +18,24 @@ int main(int arc, char* argv[]) {
     auto msgs = std::vector<can::Message>({msg1});
     auto msg_handler = can::MessageHandler(msgs);
 
-    auto bus = std::make_unique<can::Bus>("vcan0");
+    auto filters = std::vector<can::Filter>();
+    for (auto& msg : msgs) {
+        filters.push_back(msg);
+    }
+
+    auto bus = std::make_unique<can::Bus>("vcan0", filters);
 
     while (1) {
-        auto r = msg_handler.decode(bus->read());
+        auto rframe = bus->read();
+        auto r = msg_handler.decode(rframe);
 
         for (auto const& [key, val] : r) {
             std::cout << key << ": " << val << std::endl;
         }
+
+        auto new_data = std::map<std::string, double>({{"test1", 3.0}});
+
+        auto wframe = msg_handler.encode(new_data);
+        auto w = bus->write(wframe);
     }
 }

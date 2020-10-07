@@ -80,6 +80,33 @@ auto SocketHandler::recv() const -> Frame {
     return Frame(frame.can_id, frame.can_dlc, frame.data);
 }
 
+auto SocketHandler::send(const Frame t_frame) -> int {
+    struct can_frame frame;
+    frame.can_id = t_frame.id();
+    
+    auto t_data = t_frame.data();
+    auto n = t_data.size();
+    frame.can_dlc = static_cast<uint8_t>(n);
+
+    std::copy(t_data.begin(), t_data.end(), frame.data);
+    
+    auto r = ::write(m_fd, &frame, sizeof(frame));
+    return r;
+}
+
+auto SocketHandler::addFilters(std::vector<Filter> t_filters) -> int {
+    struct can_filter rfilter[t_filters.size()];
+    int i = 0;
+    for (auto it = t_filters.begin(); it != t_filters.end(); it++) {
+        rfilter[i].can_id = it->m_id;
+        rfilter[i].can_mask = it->m_mask;
+        i++;
+    }
+
+    auto r = setsockopt(m_fd, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
+    return r;
+}
+
 auto nameToIndex(int t_fd, std::string t_iface) -> int {
     struct ifreq ifr;
 
@@ -95,11 +122,18 @@ auto nameToIndex(int t_fd, std::string t_iface) -> int {
     return ifr.ifr_ifindex;
 }
 
-Bus::Bus(const std::string& t_iface)
+Bus::Bus(const std::string& t_iface, const std::vector<Filter> t_filters)
 : m_socket_handler(std::make_shared<SocketHandler>(t_iface))
-{ }
+{ 
+    m_socket_handler->addFilters(t_filters); 
+}
 
 auto Bus::read() -> Frame {
     return m_socket_handler->recv();
 }
+
+auto Bus::write(const Frame t_frame) -> int {
+    return m_socket_handler->send(t_frame);
+}
+
 }

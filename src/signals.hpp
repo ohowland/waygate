@@ -37,6 +37,7 @@ class Message {
 public:
     Message(const std::string& t_name, const uint32_t t_id, const std::vector<Signal> t_sigs);
 
+    auto name() -> std::string { return m_name; }
     auto id() -> uint32_t { return m_id; }
     auto signals() -> std::vector<Signal> { return m_signals; }
     
@@ -53,8 +54,10 @@ public:
     MessageHandler(std::vector<Message> t_msgs);
 
     auto decode(const Frame t_frame) const -> std::map<std::string, double>;
+    auto encode(const std::map<std::string, double> t_data) -> Frame;
 private:
-    std::map<uint32_t, Message> m_messages;
+    std::map<uint32_t, Message> m_msg_ids;
+    std::map<std::string, Message> m_msg_names;
 };
 
 }

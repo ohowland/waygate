@@ -45,7 +45,7 @@ auto Message::decode(const Frame t_frame) const -> std::map<std::string, double>
     return decoded;
 }
 
-auto msg_vec_to_map(std::vector<Message> t_msgs) -> std::map<uint32_t, Message> {
+auto msg_vec_to_map_ids(std::vector<Message> t_msgs) -> std::map<uint32_t, Message> {
     std::map<uint32_t, Message> msg_map;
     for (auto msg : t_msgs) {
         msg_map.emplace(std::pair<uint32_t, Message>(msg.id(), msg));
@@ -53,13 +53,33 @@ auto msg_vec_to_map(std::vector<Message> t_msgs) -> std::map<uint32_t, Message> 
     return msg_map;
 }
 
+auto msg_vec_to_map_names(std::vector<Message> t_msgs) -> std::map<std::string, Message> {
+    std::map<std::string, Message> msg_map;
+    for (auto msg : t_msgs) {
+        msg_map.emplace(std::pair<std::string, Message>(msg.name(), msg));
+    }
+    return msg_map;
+}
+
 MessageHandler::MessageHandler(std::vector<Message> t_msgs)
-: m_messages(msg_vec_to_map(t_msgs))
+: m_msg_ids(msg_vec_to_map_ids(t_msgs)),
+  m_msg_names(msg_vec_to_map_names(t_msgs))
 { }
 
 auto MessageHandler::decode(const Frame t_frame) const -> std::map<std::string, double> {
-    auto msg = m_messages.at(t_frame.id());
+    auto msg = m_msg_ids.at(t_frame.id());
     return msg.decode(t_frame);
+}
+
+// want to map(signal name, -> signal value) to return can frame.
+// frames generally have multi signals, so not sure if want to save other values
+// or to enforce rewire.
+
+auto MessageHandler::encode(const std::map<std::string, double> t_data) -> Frame {
+    for (auto const& [key, val] : t_data) {
+        auto msg = m_msg_names.at(key);
+    }
+    return Frame();
 }
 
 
